@@ -1,0 +1,30 @@
+#images-container {
+  visibility: hidden;
+  opacity: 0;
+  display: none;
+  justify-content: space-evenly;
+  gap: 20px;
+  transition: visibility 0s, opacity 0.3s linear;
+}
+
+.image p {
+  text-align: center;
+  font-size: 20px;
+}
+
+#generate-button {
+  background-color: #AA77FF;
+  border: none;
+  border-radius: 10px;
+  width: 100%;
+  padding: 10px 0;
+  color: white;
+  font-size: 15px;
+  transition: 0.2s ease-in;
+}
+
+#generate-button:hover {
+  cursor: pointer;
+  background-color: #655DBB;
+  transition: 0.2s ease-in;
+}
