@@ -4,8 +4,8 @@ section .data
 
 section .bss
   read_byte_buffer resb 1
-  encrypted_pixel_msb resb 3
-  encrypted_pixel_lsb resb 3
+  encrypted_pixel_msb resb 2
+  encrypted_pixel_lsb resb 2
 
 section .text 
   global _start
@@ -85,8 +85,9 @@ read_pixel:
     cmp r13, 0x20 ; Check if the byte is a space
     je break_pixel_loop
 
-    shl r12, 8 ; Shifts the pixel one byte to the left
-    or r12, r13 ; Adds the read byte to the pixel
+    sub r13, 0x30 ; Subtracts 0x30 from the read byte to get the binary value
+    imul r12, 10 ; multiplies the pixel by 10
+    add r12, r13 ; Adds the read byte to the pixel
 
     jmp get_pixel_loop
 
@@ -113,10 +114,8 @@ get_encrypted_pixel_value:
   call read_pixel
   mov r13, rax ; Stores the LSB value in r13
 
-  and r12, 0xFFFFFF ; Clears the upper 5 bytes of the MSB
-  and r13, 0xFFFFFF; Clears the upper 5 bytes of  the LSB
-
-  ; Convertir de ascii a binario y combinar los numeros
+  ; and r12, 0xFFFF ; Clears the upper 6 bytes of the MSB
+  ; and r13, 0xFFFF; Clears the upper 6 bytes of  the LSB
 
   pop r13 ; Restores r13 from the stack
   pop r12 ; Restores r12 from the stack
