@@ -1,5 +1,7 @@
 guia/
+RSA/comandos.txt
+RSA/build
 visualization/node_modules
+visualization/decrypted
 
 especificacion.pdf
-visualization/decrypted
