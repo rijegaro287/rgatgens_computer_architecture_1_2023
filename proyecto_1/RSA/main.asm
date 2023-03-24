@@ -20,7 +20,7 @@ _start:
 
   mov rsi, rax ; Stores the file size in rsi
   mov rdx, 0 ; Offset from the beginning of the file
-  call read_pixel
+  call get_encrypted_pixel_value
 
   jmp _exit
 
@@ -58,7 +58,7 @@ read_pixel:
   push r12 ; Stores r12 in the stack
   push r13 ; Stores r13 in the stack
 
-  mov r12, 0 ; Pixel bytes
+  xor r12, r12 ; Pixel bytes
 
   get_pixel_loop:
     cmp rdx, rsi
@@ -80,13 +80,13 @@ read_pixel:
     mov r13, [read_byte_buffer] ; Stores the read byte in r13
     and r13, 0xff ; Clears the upper 56 bits
     
+    inc rdx ; Increments the offset
+
     cmp r13, 0x20 ; Check if the byte is a space
     je break_pixel_loop
 
     shl r12, 8 ; Shifts the pixel one byte to the left
     or r12, r13 ; Adds the read byte to the pixel
-    
-    inc rdx ; Increments the offset
 
     jmp get_pixel_loop
 
@@ -95,6 +95,33 @@ read_pixel:
     pop r13 ; Restores r13 from the stack
     pop r12 ; Restores r12 from the stack
     ret
+
+; Reads the MSB and LSB of an encrypted pixel and combines them
+; --> Inputs:
+;      rdi: file descriptor
+;      rsi: size of the file
+;      rdx: offset from the beginning of the file
+; --> Outputs:
+;      rax: encrypted pixel
+get_encrypted_pixel_value:
+  push r12 ; Stores r12 in the stack
+  push r13 ; Stores r13 in the stack
+
+  call read_pixel
+  mov r12, rax ; Stores the MSB value in r12
+
+  call read_pixel
+  mov r13, rax ; Stores the LSB value in r13
+
+  and r12, 0xFFFFFF ; Clears the upper 5 bytes of the MSB
+  and r13, 0xFFFFFF; Clears the upper 5 bytes of  the LSB
+
+  ; Convertir de ascii a binario y combinar los numeros
+
+  pop r13 ; Restores r13 from the stack
+  pop r12 ; Restores r12 from the stack
+
+  ret
 
 _exit:
   mov rax, 60
