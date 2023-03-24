@@ -133,6 +133,42 @@ get_encrypted_pixel_value:
 ; --> Outputs:
 ;      rax: decrypted pixel
 decrypt_pixel:
+  push r12 ; Stores r12 in the stack
+  push r13 ; Stores r13 in the stack
+  push r14 ; Stores r14 in the stack
+  push r15 ; Stores r15 in the stack
+
+  mov rax, rdi ; Stores the encrypted pixel (c) in rax
+
+  mov r12, 1631 ; Stores d
+  mov r13, 5963 ; Stores n
+  mov r14, 1 ; Clears r14 to store the decrypted pixel
+  decrypt_loop:
+    xor rdx, rdx ; Clears rdx
+    div r13 ; Divides rax by n
+    mov rax, rdx ; Stores the remainder in rax
+
+    mov r15, r12  ; Stores d in r15
+    and r15, 1 ; Takes the nth bit of d stored in the LSB of r15
+
+    cmp r15, 1 ; Checks if the nth bit of d is 1
+    jne decrypt_loop_start
+
+    mov r15, rax ; Stores rax in r15
+    imul rax, r14 ; Multiplies the decrypted pixel by the remainder
+    xor rdx, rdx ; Clears rdx
+    div r13 ; Divides rax by n
+    mov r14, rdx ; Stores the remainder in r14
+    mov rax, r15 ; Restores the previous remainder in rax
+
+    decrypt_loop_start:
+      imul rax, rax ; Squares rax
+      shr r12, 1 ; Shifts d to the right by the counter
+      cmp r12, 0 ; Checks if r12 != 0
+      jne decrypt_loop
+    
+    mov rax, r14 ; Stores the decrypted pixel in rax
+  bbb:
   ret
 
 _exit:
