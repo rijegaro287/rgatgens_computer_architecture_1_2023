@@ -22,6 +22,9 @@ _start:
   mov rdx, 0 ; Offset from the beginning of the file
   call get_encrypted_pixel_value
 
+  mov rdi, rax ; Stores the encrypted pixel in rdi
+  call decrypt_pixel
+
   jmp _exit
 
 ; Opens a file that is going to be read
@@ -114,12 +117,22 @@ get_encrypted_pixel_value:
   call read_pixel
   mov r13, rax ; Stores the LSB value in r13
 
-  ; and r12, 0xFFFF ; Clears the upper 6 bytes of the MSB
-  ; and r13, 0xFFFF; Clears the upper 6 bytes of  the LSB
+  shl r12, 8 ; Shifts the MSB 8 bits to the left
+  or r12, r13 ; Combines the MSB and LSB
+
+  mov rax, r12 ; Stores the encrypted pixel in rax
 
   pop r13 ; Restores r13 from the stack
   pop r12 ; Restores r12 from the stack
 
+  ret
+
+; Decrypts a pixel
+; --> Inputs:
+;      rdi: encrypted pixel
+; --> Outputs:
+;      rax: decrypted pixel
+decrypt_pixel:
   ret
 
 _exit:
