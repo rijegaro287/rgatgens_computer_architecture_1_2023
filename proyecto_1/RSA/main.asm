@@ -1,9 +1,11 @@
 section .data
   ; encrypted_image_path db "../../text/encrypted.txt", 0
   encrypted_image_path db "../../text/a.txt", 0
+  decrypted_image_path db "../../text/b.txt", 0
 
 section .bss
   read_byte_buffer resb 1
+  write_pixel_buffer resb 1
   encrypted_pixel_msb resb 2
   encrypted_pixel_lsb resb 2
 
@@ -25,6 +27,15 @@ _start:
   mov rdi, rax ; Stores the encrypted pixel in rdi
   call decrypt_pixel
 
+  mov r12, rax ; Stores the decrypted pixel in rsi
+
+  mov rdi, decrypted_image_path
+  call open_file
+
+  mov rdi, rax ; Stores the file descriptor in rdi
+  mov rsi, r12 ; Stores the decrypted pixel in rsi
+  call write_pixel
+
   jmp _exit
 
 ; Opens a file that is going to be read
@@ -34,7 +45,8 @@ _start:
 ;      rax: file descriptor
 open_file:
   mov rax, 2 ; sys_open
-  mov rsi, 0 ; flags - O_RDONLY
+  mov rsi, 1090 ; flags - O_APPEND
+  mov rdx, 0644o ; mode
   syscall
   ret
 
@@ -127,7 +139,7 @@ get_encrypted_pixel_value:
 
   ret
 
-; Decrypts a pixel
+; Decrypts a pixel using modular exponentiation
 ; --> Inputs:
 ;      rdi: encrypted pixel
 ; --> Outputs:
@@ -167,8 +179,68 @@ decrypt_pixel:
       cmp r12, 0 ; Checks if r12 != 0
       jne decrypt_loop
     
-    mov rax, r14 ; Stores the decrypted pixel in rax
-  bbb:
+  mov rax, r14 ; Stores the decrypted pixel in rax
+
+  pop r15 ; Restores r15 from the stack
+  pop r14 ; Restores r14 from the stack
+  pop r13 ; Restores r13 from the stack
+  pop r12 ; Restores r12 from the stack
+
+  ret
+
+; Writes a pixel value to a file
+; --> Inputs:
+;      rdi: file descriptor
+;      rsi: pixel value
+write_pixel:
+  push r12 ; Stores r12 in the stack
+  push r13 ; Stores r13 in the stack
+  push r14 ; Stores r14 in the stack
+  push r15 ; Stores r15 in the stack
+
+  xor r12, r12 ; Clears r12 to store the ASCII value
+  mov r13, 10
+  xor r15, r15 ; Clears r15 to store the number of digits
+  mov rax, rsi ; Stores the pixel value in rax
+  convert_to_ascii_loop: 
+    xor rdx, rdx ; Clears rdx
+    div r13 ; Divides the pixel value by 10
+    mov r12, rdx ; Stores the remainder in r12
+    or r12, 0x30 ; Adds 0x30 to the remainder to get the ASCII value
+
+    push r12
+    inc r15
+
+    cmp rax, 0 ; Checks if the pixel value is 0
+    jne convert_to_ascii_loop
+
+  write_bytes_loop:
+    pop r12
+    mov [write_pixel_buffer], r12 ; Stores the pixel value in write_pixel_buffer
+    call write_byte ; Writes the ASCII value to the file
+
+    dec r15
+    cmp r15, 0
+    jne write_bytes_loop
+
+  mov r12, 0x20
+  mov [write_pixel_buffer], r12 ; Stores the pixel value in write_pixel_buffer
+  call write_byte ; Writes the ASCII value to the file
+
+  mov rax, 3 ; sys_close
+  syscall
+
+  pop r15 ; Restores r15 from the stack
+  pop r14 ; Restores r14 from the stack
+  pop r13 ; Restores r13 from the stack
+  pop r12 ; Restores r12 from the stack
+  ret
+
+write_byte:
+  mov rax, 1 ; sys_write
+  mov rsi, write_pixel_buffer ; Stores the pixel value in rdi
+  mov rdx, 2 ; Number of bytes to write
+  syscall
   ret
 
 _exit:
