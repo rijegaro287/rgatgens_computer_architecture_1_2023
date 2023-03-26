@@ -13,28 +13,38 @@ section .text
   global _start
 
 _start:
-  mov rdi, encrypted_image_path
-  call open_file
+  mov r13, 0 ; Offset from the beginning of the file
+  main_loop:
+    mov rdi, encrypted_image_path
+    call open_file
 
-  ; mov r15, rax ; Stores the file descriptor in r15
-  mov rdi, rax ; Stores the file descriptor in rdi
-  call get_file_size
+    ; mov r15, rax ; Stores the file descriptor in r15
+    mov rdi, rax ; Stores the file descriptor in rdi
+    call get_file_size
+  
+    push rax ; Stores the file size in the stack
 
-  mov rsi, rax ; Stores the file size in rsi
-  mov rdx, 0 ; Offset from the beginning of the file
-  call get_encrypted_pixel_value
+    mov rsi, rax ; Stores the file size in rsi
+    mov rdx, r13 ; Offset from the beginning of the file
+    call get_encrypted_pixel_value
 
-  mov rdi, rax ; Stores the encrypted pixel in rdi
-  call decrypt_pixel
+    mov r13, rdx
 
-  mov r12, rax ; Stores the decrypted pixel in rsi
+    mov rdi, rax ; Stores the encrypted pixel in rdi
+    call decrypt_pixel
 
-  mov rdi, decrypted_image_path
-  call open_file
+    mov r12, rax ; Stores the decrypted pixel in rsi
 
-  mov rdi, rax ; Stores the file descriptor in rdi
-  mov rsi, r12 ; Stores the decrypted pixel in rsi
-  call write_pixel
+    mov rdi, decrypted_image_path
+    call open_file
+
+    mov rdi, rax ; Stores the file descriptor in rdi
+    mov rsi, r12 ; Stores the decrypted pixel in rsi
+    call write_pixel
+    
+    pop r12 ; Restores the file size from the stack
+    cmp r13, r12 ; Checks if the file size is 0
+    jl main_loop
 
   jmp _exit
 
@@ -60,6 +70,34 @@ get_file_size:
   mov rdx, 2 ; read until the end of the file
   mov rax, 8 ; sys_lseek
   syscall
+  ret
+
+; Reads the MSB and LSB of an encrypted pixel and combines them
+; --> Inputs:
+;      rdi: file descriptor
+;      rsi: size of the file
+;      rdx: offset from the beginning of the file
+; --> Outputs:
+;      rax: encrypted pixel
+get_encrypted_pixel_value:
+  push r12 ; Stores r12 in the stack
+  push r13 ; Stores r13 in the stack
+
+  call read_pixel
+  mov r12, rax ; Stores the MSB value in r12
+
+  call read_pixel
+  mov r13, rax ; Stores the LSB value in r13
+
+b:
+  shl r12, 8 ; Shifts the MSB 8 bits to the left
+  or r12, r13 ; Combines the MSB and LSB
+
+  mov rax, r12 ; Stores the encrypted pixel in rax
+
+  pop r13 ; Restores r13 from the stack
+  pop r12 ; Restores r12 from the stack
+
   ret
 
 ; Reads a maximum of 3 bytes from a file
@@ -111,33 +149,6 @@ read_pixel:
     pop r13 ; Restores r13 from the stack
     pop r12 ; Restores r12 from the stack
     ret
-
-; Reads the MSB and LSB of an encrypted pixel and combines them
-; --> Inputs:
-;      rdi: file descriptor
-;      rsi: size of the file
-;      rdx: offset from the beginning of the file
-; --> Outputs:
-;      rax: encrypted pixel
-get_encrypted_pixel_value:
-  push r12 ; Stores r12 in the stack
-  push r13 ; Stores r13 in the stack
-
-  call read_pixel
-  mov r12, rax ; Stores the MSB value in r12
-
-  call read_pixel
-  mov r13, rax ; Stores the LSB value in r13
-
-  shl r12, 8 ; Shifts the MSB 8 bits to the left
-  or r12, r13 ; Combines the MSB and LSB
-
-  mov rax, r12 ; Stores the encrypted pixel in rax
-
-  pop r13 ; Restores r13 from the stack
-  pop r12 ; Restores r12 from the stack
-
-  ret
 
 ; Decrypts a pixel using modular exponentiation
 ; --> Inputs:
