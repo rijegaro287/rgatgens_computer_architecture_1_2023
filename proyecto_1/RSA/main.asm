@@ -173,23 +173,19 @@ decrypt_pixel:
   mov rax, rdi ; Stores the encrypted pixel (c) in rax
 
   mov r12, [d_buffer] ; Stores d
-  and r12, 0xFFFF
   mov r13, [n_buffer] ; Stores n
+  and r12, 0xFFFF
   and r13, 0xFFFF
 
   mov r14, 1 ; Clears r14 to store the decrypted pixel
   decrypt_loop:
-    xor rdx, rdx ; Clears rdx
-    div r13 ; Divides rax by n
-    mov rax, rdx ; Stores the remainder in rax
-
     mov r15, r12  ; Stores d in r15
     and r15, 1 ; Takes the nth bit of d stored in the LSB of r15
 
     cmp r15, 1 ; Checks if the nth bit of d is 1
     jne decrypt_loop_start
 
-    mov r15, rax ; Stores rax in r15
+    mov r15, rax ; Stores the remainder in r15
     imul rax, r14 ; Multiplies the decrypted pixel by the remainder
     xor rdx, rdx ; Clears rdx
     div r13 ; Divides rax by n
@@ -198,7 +194,11 @@ decrypt_pixel:
 
     decrypt_loop_start:
       imul rax, rax ; Squares rax
+      xor rdx, rdx ; Clears rdx
+      div r13 ; Divides rax by n
+      mov rax, rdx ; Stores the remainder in rax
       shr r12, 1 ; Shifts d to the right by the counter
+      
       cmp r12, 0 ; Checks if r12 != 0
       jne decrypt_loop
     
@@ -208,7 +208,6 @@ decrypt_pixel:
   pop r14 ; Restores r14 from the stack
   pop r13 ; Restores r13 from the stack
   pop r12 ; Restores r12 from the stack
-
   ret
 
 ; Writes a pixel value to a file
