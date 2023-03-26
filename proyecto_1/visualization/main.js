@@ -1,22 +1,14 @@
 const path = require('path');
+const fs = require('fs');
+const fsExtra = require('fs-extra');
+const readline = require('readline');
 const { spawn } = require('child_process');
-const rimraf = require("rimraf");
 
 const { app, BrowserWindow } = require('electron');
 
 const { generateImagesFromText } = require('./textToImage');
 
-
-rimraf.sync(path.resolve("../images"), [], () => { });
-rimraf.sync(path.resolve("../text/decrypted.txt"), [], () => { });
-
-const executablePath = '../RSA/build';
-const proc = spawn('./main', [], {
-  stdio: 'inherit',
-  cwd: path.resolve(executablePath)
-});
-
-proc.on('exit', () => {
+function showWindow() {
   const images = [
     {
       name: 'encrypted',
@@ -58,4 +50,43 @@ proc.on('exit', () => {
       app.quit();
     }
   });
-})
+}
+
+async function main() {
+  fsExtra.emptyDirSync(path.resolve('../images'));
+  fsExtra.emptyDirSync(path.resolve('../text'));
+
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const prompt = (query) => new Promise((resolve) => rl.question(query, resolve));
+
+  const encryptedFilePath = await prompt('Ingrese el directorio del archivo crudo:\n');
+  rl.close();
+
+  await fs.copyFile(
+    path.resolve(encryptedFilePath),
+    path.resolve('../text/encrypted.txt'),
+    (err) => { if (err) process.exit(0); }
+  );
+
+  console.log('Compilando el algoritmo de desencriptación...');
+  const RSAPath = '../RSA';
+  const buildProcess = spawn('./build.sh', [], {
+    stdio: 'inherit',
+    cwd: path.resolve(RSAPath)
+  });
+
+  buildProcess.on('exit', () => {
+    console.log('-------------------------------------------------------------------');
+    const processingProcess = spawn('./main', [], {
+      stdio: 'inherit',
+      cwd: path.resolve(`${RSAPath}/build`)
+    });
+
+    processingProcess.on('exit', () => {
+      console.log('Desencriptación terminada.');
+      showWindow();
+    })
+  });
+}
+
+main();

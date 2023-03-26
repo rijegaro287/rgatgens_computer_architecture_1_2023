@@ -48,7 +48,6 @@ _start:
     mov rdi, decrypted_image_path
     call open_file
 
-    b:
     mov rdi, rax ; Stores the file descriptor in rdi
     mov rsi, r12 ; Stores the decrypted pixel in rsi
     call write_pixel
