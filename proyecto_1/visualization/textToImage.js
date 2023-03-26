@@ -12,8 +12,17 @@ function generateImagesFromText(images) {
     for (let row = 0; row < imageInfo['height']; row++) {
       let rowPixels = [];
       for (let col = 0; col < imageInfo['width']; col++) {
+        let pixelString = '';
         let pixel = pixels[row * imageInfo['width'] + col];
-        rowPixels.push(Number(pixel));
+
+        for (let i = 0; i < pixel.length; i++) {
+          const charCode = pixel.charCodeAt(i);
+          if (charCode >= 48 && charCode <= 57) {
+            pixelString += pixel[i];
+          }
+        }
+
+        rowPixels.push(Number(pixelString));
       }
       pixelMatrix.push(rowPixels);
     }

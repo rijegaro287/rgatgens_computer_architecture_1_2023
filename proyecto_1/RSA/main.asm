@@ -1,7 +1,6 @@
 section .data
-  ; encrypted_image_path db "../../text/encrypted.txt", 0
-  encrypted_image_path db "../../text/a.txt", 0
-  decrypted_image_path db "../../text/b.txt", 0
+  encrypted_image_path db "../../text/encrypted.txt", 0
+  decrypted_image_path db "../../text/decrypted.txt", 0
 
 section .bss
   read_byte_buffer resb 1
