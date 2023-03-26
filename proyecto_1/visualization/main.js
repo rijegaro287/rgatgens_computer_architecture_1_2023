@@ -1,49 +1,63 @@
 const path = require('path');
+const { spawn } = require('child_process');
+const rimraf = require("rimraf");
+
 const { app, BrowserWindow } = require('electron');
 
 const { generateImagesFromText } = require('./textToImage');
 
-const images = [
-  {
-    name: 'encrypted',
-    width: 320,
-    height: 640
-  },
-  {
-    name: 'decrypted',
-    width: 320,
-    height: 320
-  }
-];
 
-function createWindow() {
-  const win = new BrowserWindow({
-    width: 750,
-    height: 700,
-    resizable: false,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      nodeIntegration: true
-    }
-  });
+rimraf.sync(path.resolve("../images"), [], () => { });
+rimraf.sync(path.resolve("../text/decrypted.txt"), [], () => { });
 
-  win.loadFile('index.html');
-}
-
-app.whenReady().then(() => {
-  generateImagesFromText(images);
-
-  createWindow();
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
-  });
+const executablePath = '../RSA/build';
+const proc = spawn('./main', [], {
+  cwd: path.resolve(executablePath)
 });
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
+proc.stdout.pipe(process.stdout);
+
+proc.on('exit', () => {
+  const images = [
+    {
+      name: 'encrypted',
+      width: 640,
+      height: 960
+    },
+    {
+      name: 'decrypted',
+      width: 640,
+      height: 480
+    }
+  ];
+
+  function createWindow() {
+    const win = new BrowserWindow({
+      webPreferences: {
+        nodeIntegration: true
+      }
+    });
+
+    win.maximize();
+    win.loadFile('index.html');
   }
-});
+
+  app.whenReady().then(() => {
+    generateImagesFromText(images);
+
+    createWindow();
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+      }
+    });
+  });
+
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+      app.quit();
+    }
+  });
+})
+

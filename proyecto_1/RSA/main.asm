@@ -1,7 +1,6 @@
 section .data
-  ; encrypted_image_path db "../../text/encrypted.txt", 0
-  encrypted_image_path db "../../text/a.txt", 0
-  decrypted_image_path db "../../text/b.txt", 0
+  encrypted_image_path db "../../text/encrypted.txt", 0
+  decrypted_image_path db "../../text/decrypted.txt", 0
 
 section .bss
   read_byte_buffer resb 1
@@ -163,8 +162,8 @@ decrypt_pixel:
 
   mov rax, rdi ; Stores the encrypted pixel (c) in rax
 
-  mov r12, 1631 ; Stores d
-  mov r13, 5963 ; Stores n
+  mov r12, 1531 ; Stores d
+  mov r13, 2747 ; Stores n
   mov r14, 1 ; Clears r14 to store the decrypted pixel
   decrypt_loop:
     xor rdx, rdx ; Clears rdx
