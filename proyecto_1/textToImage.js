@@ -3,7 +3,7 @@ const Jimp = require('jimp');
 
 function generateImagesFromText(images) {
   images.forEach((imageInfo) => {
-    const pixels = fs.readFileSync(`../text/${imageInfo['name']}.txt`, 'utf8', (err, data) => {
+    const pixels = fs.readFileSync(`./text/${imageInfo['name']}.txt`, 'utf8', (err, data) => {
       if (err) throw err;
     }).split(' ');
 
@@ -12,20 +12,8 @@ function generateImagesFromText(images) {
     for (let row = 0; row < imageInfo['height']; row++) {
       let rowPixels = [];
       for (let col = 0; col < imageInfo['width']; col++) {
-        let pixelString = '';
         let pixel = pixels[row * imageInfo['width'] + col];
-
-        for (let i = 0; i < pixel.length; i++) {
-          const charCode = pixel.charCodeAt(i);
-          if (charCode >= 48 && charCode <= 57) {
-            pixelString += pixel[i];
-          }
-        }
-
-        if (Number(pixelString) > 255) {
-          pixelString = '255';
-        }
-        rowPixels.push(Number(pixelString));
+        rowPixels.push(convertPixelToDecimal(pixel));
       }
       pixelMatrix.push(rowPixels);
     }
@@ -40,11 +28,24 @@ function generateImagesFromText(images) {
         }
       }
 
-      image.write(`../images/${imageInfo['name']}.png`, (err) => {
+      image.write(`./images/${imageInfo['name']}.png`, (err) => {
         if (err) throw err;
       });
     });
   });
+}
+
+function convertPixelToDecimal(pixel) {
+  let pixelString = '';
+  for (let i = 0; i < pixel.length; i++) {
+    const charCode = pixel.charCodeAt(i);
+    if (charCode >= 48 && charCode <= 57) {
+      pixelString += pixel[i];
+    }
+  }
+
+  const pixelValue = Number(pixelString) > 255 ? 255 : Number(pixelString);
+  return pixelValue;
 }
 
 function getHexColor(color) {

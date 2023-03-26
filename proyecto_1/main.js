@@ -53,8 +53,8 @@ function showWindow() {
 }
 
 async function main() {
-  fsExtra.emptyDirSync(path.resolve('../images'));
-  fsExtra.emptyDirSync(path.resolve('../text'));
+  fsExtra.emptyDirSync(path.resolve('./images'));
+  fsExtra.emptyDirSync(path.resolve('./text'));
 
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const prompt = (query) => new Promise((resolve) => rl.question(query, resolve));
@@ -64,12 +64,12 @@ async function main() {
 
   await fs.copyFile(
     path.resolve(encryptedFilePath),
-    path.resolve('../text/encrypted.txt'),
+    path.resolve('./text/encrypted.txt'),
     (err) => { if (err) process.exit(0); }
   );
 
   console.log('Compilando el algoritmo de desencriptación...');
-  const RSAPath = '../RSA';
+  const RSAPath = './RSA';
   const buildProcess = spawn('./build.sh', [], {
     stdio: 'inherit',
     cwd: path.resolve(RSAPath)
@@ -86,7 +86,17 @@ async function main() {
       console.log('Desencriptación terminada.');
       showWindow();
     })
+
+    processingProcess.on('error', (err) => {
+      console.log(err);
+      process.exit(0);
+    });
   });
+
+  buildProcess.on('error', (err) => {
+    console.log(err);
+    process.exit(0);
+  })
 }
 
 main();
