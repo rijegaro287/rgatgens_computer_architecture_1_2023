@@ -1,7 +1,5 @@
 #images-container {
-  visibility: hidden;
-  opacity: 0;
-  display: none;
+  display: flex;
   justify-content: space-evenly;
   gap: 20px;
   transition: visibility 0s, opacity 0.3s linear;
