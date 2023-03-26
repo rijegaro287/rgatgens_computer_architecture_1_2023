@@ -12,10 +12,9 @@ rimraf.sync(path.resolve("../text/decrypted.txt"), [], () => { });
 
 const executablePath = '../RSA/build';
 const proc = spawn('./main', [], {
+  stdio: 'inherit',
   cwd: path.resolve(executablePath)
 });
-
-proc.stdout.pipe(process.stdout);
 
 proc.on('exit', () => {
   const images = [
@@ -60,4 +59,3 @@ proc.on('exit', () => {
     }
   });
 })
-
