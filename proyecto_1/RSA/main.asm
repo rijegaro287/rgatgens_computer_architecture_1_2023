@@ -1,10 +1,15 @@
 section .data
+  get_private_key_message db "Ingrese la llave privada separada por un espacio (<d> <n>):", 10
+  decrypting_message db "Desencriptando imagen...", 10
   encrypted_image_path db "../../text/encrypted.txt", 0
   decrypted_image_path db "../../text/decrypted.txt", 0
 
 section .bss
+  d_buffer resb 2
+  n_buffer resb 2
   read_byte_buffer resb 1
   write_pixel_buffer resb 1
+  private_key_buffer resb 9
   encrypted_pixel_msb resb 2
   encrypted_pixel_lsb resb 2
 
@@ -12,6 +17,12 @@ section .text
   global _start
 
 _start:
+  call get_private_key
+  mov rax, [private_key_buffer]
+  call save_private_key
+
+  call print_decrypting_message
+
   mov r13, 0 ; Offset from the beginning of the file
   main_loop:
     mov rdi, encrypted_image_path
@@ -88,7 +99,6 @@ get_encrypted_pixel_value:
   call read_pixel
   mov r13, rax ; Stores the LSB value in r13
 
-b:
   shl r12, 8 ; Shifts the MSB 8 bits to the left
   or r12, r13 ; Combines the MSB and LSB
 
@@ -162,8 +172,11 @@ decrypt_pixel:
 
   mov rax, rdi ; Stores the encrypted pixel (c) in rax
 
-  mov r12, 1531 ; Stores d
-  mov r13, 2747 ; Stores n
+  mov r12, [d_buffer] ; Stores d
+  and r12, 0xFFFF
+  mov r13, [n_buffer] ; Stores n
+  and r13, 0xFFFF
+
   mov r14, 1 ; Clears r14 to store the decrypted pixel
   decrypt_loop:
     xor rdx, rdx ; Clears rdx
@@ -250,6 +263,68 @@ write_byte:
   mov rax, 1 ; sys_write
   mov rsi, write_pixel_buffer ; Stores the pixel value in rdi
   mov rdx, 2 ; Number of bytes to write
+  syscall
+  ret
+
+get_private_key:
+  mov rax, 1 ; sys_write
+  mov rdi, 1
+  mov rsi, get_private_key_message ; Stores the message in rsi
+  mov rdx, 60 ; Number of bytes to write
+  syscall
+
+  mov rax, 0 ; sys_read
+  mov rdi, 0 ; stdin
+  mov rsi, private_key_buffer ; Stores the input in d_buffer
+  mov rdx, 9 ; Number of bytes to read
+  syscall
+  ret
+
+save_private_key:
+  push r12
+  push r13
+  push r15
+
+  xor r12, r12 ; Clears r12 
+  xor r13, r13 ; Clears r13
+  xor r14, r14 ; Clears r14
+
+  conversion_loop:
+    cmp r14, 9
+    je save_n
+    
+    mov r13, [private_key_buffer + r14]
+    and r13, 0xFF ; Clears the upper bytes of r13
+
+    cmp r13, 0x20 ; Checks if the digit is a space
+    je save_d
+
+    sub r13, 0x30 ; Subtracts 0x30 from r13
+    imul r12, 10 ; multiplies the current value by 10
+    add r12, r13 ; Adds the read byte to the pixel
+
+    inc r14
+    jmp conversion_loop
+
+  save_n:
+    mov [n_buffer], r12 ; Stores the second number in n_buffer
+    pop r14
+    pop r13
+    pop r12
+    ret
+
+  save_d:
+    mov [d_buffer], r12 ; Stores the first number in d_buffer
+    xor r12, r12 ; Clears r12
+    shr rax, 8 ; Shifts r13 to the right by 8 bits
+    inc r14
+    jmp conversion_loop
+
+print_decrypting_message:
+  mov rax, 1 ; sys_write
+  mov rdi, 1
+  mov rsi, decrypting_message ; Stores the message in rsi
+  mov rdx, 25 ; Number of bytes to write
   syscall
   ret
 
