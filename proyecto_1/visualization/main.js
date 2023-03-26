@@ -1,12 +1,14 @@
 const path = require('path');
+const { spawn } = require('child_process');
+const rimraf = require("rimraf");
+
 const { app, BrowserWindow } = require('electron');
 
 const { generateImagesFromText } = require('./textToImage');
 
 
-const { spawn } = require('child_process');
-
-console.log("Desencriptando imagen...");
+rimraf.sync(path.resolve("../images"), [], () => { });
+rimraf.sync(path.resolve("../text/decrypted.txt"), [], () => { });
 
 const executablePath = '../RSA/build';
 const proc = spawn('./main', [], {
@@ -19,27 +21,24 @@ proc.on('exit', () => {
   const images = [
     {
       name: 'encrypted',
-      width: 320,
-      height: 640
+      width: 640,
+      height: 960
     },
     {
       name: 'decrypted',
-      width: 320,
-      height: 320
+      width: 640,
+      height: 480
     }
   ];
 
   function createWindow() {
     const win = new BrowserWindow({
-      width: 750,
-      height: 700,
-      resizable: false,
       webPreferences: {
-        preload: path.join(__dirname, 'preload.js'),
         nodeIntegration: true
       }
     });
 
+    win.maximize();
     win.loadFile('index.html');
   }
 

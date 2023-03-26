@@ -22,6 +22,9 @@ function generateImagesFromText(images) {
           }
         }
 
+        if (Number(pixelString) > 255) {
+          pixelString = '255';
+        }
         rowPixels.push(Number(pixelString));
       }
       pixelMatrix.push(rowPixels);

@@ -162,8 +162,8 @@ decrypt_pixel:
 
   mov rax, rdi ; Stores the encrypted pixel (c) in rax
 
-  mov r12, 1631 ; Stores d
-  mov r13, 5963 ; Stores n
+  mov r12, 1531 ; Stores d
+  mov r13, 2747 ; Stores n
   mov r14, 1 ; Clears r14 to store the decrypted pixel
   decrypt_loop:
     xor rdx, rdx ; Clears rdx
