@@ -8,6 +8,13 @@ const { app, BrowserWindow } = require('electron');
 
 const { generateImagesFromText } = require('./textToImage');
 
+function createWindow() {
+  const win = new BrowserWindow({ webPreferences: { nodeIntegration: true } });
+
+  win.maximize();
+  win.loadFile('index.html');
+}
+
 function showWindow() {
   const images = [
     {
@@ -21,17 +28,6 @@ function showWindow() {
       height: 480
     }
   ];
-
-  function createWindow() {
-    const win = new BrowserWindow({
-      webPreferences: {
-        nodeIntegration: true
-      }
-    });
-
-    win.maximize();
-    win.loadFile('index.html');
-  }
 
   app.whenReady().then(() => {
     generateImagesFromText(images);
@@ -62,11 +58,28 @@ async function main() {
   const encryptedFilePath = await prompt('Ingrese el directorio del archivo crudo:\n');
   rl.close();
 
-  await fs.copyFile(
-    path.resolve(encryptedFilePath),
-    path.resolve('./text/encrypted.txt'),
-    (err) => { if (err) process.exit(0); }
-  );
+  await fs.readFile(path.resolve(encryptedFilePath), 'utf8', async (err, data) => {
+    if (err) {
+      console.error(err);
+      return;
+    }
+
+    let encryptedText = '';
+    for (let i = 0; i < data.length; i++) {
+      const char = data.charCodeAt(i);
+      if (char !== 10) {
+        encryptedText += data[i];
+      }
+    }
+
+    await fs.writeFile('./text/encrypted.txt', encryptedText, 'utf-8', (err) => {
+      if (err) {
+        console.error(err);
+        return;
+      }
+    });
+  });
+
 
   console.log('Compilando el algoritmo de desencriptación...');
   const RSAPath = './RSA';
@@ -77,25 +90,25 @@ async function main() {
 
   buildProcess.on('exit', () => {
     console.log('-------------------------------------------------------------------');
-    const processingProcess = spawn('./main', [], {
+    const decryptProcess = spawn('./main', [], {
       stdio: 'inherit',
       cwd: path.resolve(`${RSAPath}/build`)
     });
 
-    processingProcess.on('exit', () => {
+    decryptProcess.on('exit', () => {
       console.log('Desencriptación terminada.');
       showWindow();
     })
 
-    processingProcess.on('error', (err) => {
+    decryptProcess.on('error', (err) => {
       console.log(err);
-      process.exit(0);
+      app.quit();
     });
   });
 
   buildProcess.on('error', (err) => {
     console.log(err);
-    process.exit(0);
+    app.quit();
   })
 }
 
